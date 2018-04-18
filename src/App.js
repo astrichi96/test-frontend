@@ -1,7 +1,9 @@
 import React from "react";
-import { render } from "react-dom";
-import { makeData, Logo, Tips } from "./Utils";
-import "./App.css";
+import { Tips } from "./Utils";
+
+import { FormControl, FormGroup, Button, Navbar, Col, Row, Glyphicon } from 'react-bootstrap'
+
+//import "./App.css";
 // Import React Table
 import ReactTable from "react-table";
 import "react-table/react-table.css";
@@ -9,11 +11,21 @@ import "react-table/react-table.css";
 class App extends React.Component {
   constructor() {
     super();
-    this.state = { data: [] }
-     
+    this.state = { 
+      data: [], 
+      avgTime: false,
+      avgDay: false,
+      reqMac: false, 
+      reqStat: false, 
+    }
+    this.handleShowAvgTime = this.handleShowAvgTime.bind(this);
+    this.handleShowAvgDay = this.handleShowAvgDay.bind(this);
+    this.handleShowReqMac= this.handleShowReqMac.bind(this);
+    this.handleShowReqStat = this.handleShowReqStat.bind(this);
+
+    this.handleHide = this.handleHide.bind(this);
   }
 
-  
   componentWillMount() {
     fetch("https://api.cebroker.com/v1/cerenewaltransactions/GetLogsRecordData?startdate=04/16/2018")
       .then((response) => {
@@ -21,16 +33,101 @@ class App extends React.Component {
       })
       .then((data) => {
         this.setState({ data: data })
+        console.log(data.length)
       })
   }
 
+  handleShowAvgTime() {
+    this.setState({ avgTime: true });
+  }
+  handleShowAvgDay() {
+    this.setState({ avgDay: true });
+  }
+  handleShowReqMac() {
+    this.setState({ reqMac: true });
+  }
+  handleShowReqStat() {
+    this.setState({ reqStat: true });
+  }
+
+  handleHide() {
+    this.setState({ show: false });
+  }
+
   render() {
-    const { data } = this.state.data;
+    const { data } = this.state;
     return (
-      <div className="App-intro">
-        <Tips className="App-header"/>
-        <Logo /> 
-        <ReactTable className = "App"
+      
+      <div className= "container"><br />
+        <Navbar>
+          <Navbar.Header bsStyle="inverse">
+            <Navbar.Brand>
+              <a  href="#home">Pagina Principal</a>
+              
+            </Navbar.Brand>
+            <Navbar.Toggle />
+          </Navbar.Header>
+          <Navbar.Collapse>
+            <Navbar.Text pullRight>The compliance status for licensees of some states in the US.</Navbar.Text>
+          </Navbar.Collapse>
+        </Navbar>
+     
+      <br />
+        <div className= "row">
+          <div className= "row "> 
+            <br />
+            <form>
+              <FormGroup>
+                <Col smOffset={1} sm={4}>
+                    <FormControl
+                      id="formControlsText"
+                      type="text"
+                      label="Text"
+                      placeholder="Enter date initial"
+                    />
+                </Col>
+                <Col sm={4}>
+                  <FormControl
+                      id="formControlsEmail"
+                      type="email"
+                      label="Email address"
+                      placeholder="Enter date end"
+                    />
+                </Col>
+                <Col  sm={3}>
+                  <Button bsStyle="danger" type="submit"> filter Records</Button>
+                </Col>
+                </FormGroup>
+              </form>
+              
+            </div >
+          <br /><br />   
+          <Row>
+            <Col  smOffset={2} sm={2}>
+              <Button bsStyle="primary">
+                <Glyphicon glyph="stats" />  Avg Response Time
+              </Button>
+            </Col>
+            <Col  sm={2}>
+              <Button bsStyle="primary">
+                <Glyphicon glyph="stats" />  Avg Response Day
+              </Button>
+            </Col>
+            <Col  sm={2}>
+              <Button bsStyle="primary">
+                <Glyphicon glyph="stats" />  Request per Machine
+              </Button>
+            </Col>
+            <Col  sm={2}>
+              <Button bsStyle="primary">
+                <Glyphicon glyph="stats" />  Request per Status
+              </Button>
+            </Col>
+          </Row> 
+
+          <br /><br />  
+        
+        <ReactTable
           data={data}
           filterable
           columns={[ 
@@ -62,7 +159,7 @@ class App extends React.Component {
                   style={{ width: "100%" }}
                   value={filter ? filter.value : "all"}
                 >
-                  <option value="all">Listar Todos</option>
+                  <option value="all">Show All</option>
                   <option value="FL">FL</option>
                   <option value="OH">OH</option>
                   <option value="GA">GA</option>
@@ -120,10 +217,13 @@ class App extends React.Component {
           className="-striped -highlight"
         />
         <br />
-        
+        <Tips />
+        <br />
+      </div>
       </div>
     );
   }
+  
   
 }
 export default App;
