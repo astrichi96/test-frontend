@@ -1,7 +1,7 @@
 import React from "react";
 import { Tips } from "./Utils";
-
-import { FormControl, FormGroup, Button, Navbar, Col, Row, Glyphicon } from 'react-bootstrap'
+import {Line, Bar} from 'react-chartjs-2';
+import { FormControl, FormGroup, Button, Navbar, Col, Row, Glyphicon, Modal } from 'react-bootstrap'
 
 //import "./App.css";
 // Import React Table
@@ -13,29 +13,35 @@ class App extends React.Component {
     super();
     this.state = {
       data: [],
-      avgTime: false,
-      avgDay: false,
-      reqMac: false,
-      reqStat: false,
+      show_tt: false,
+      show_rd: false,
+      show_rm: false,
+      show_rs: false,
+      data_tt: {},
+      data_rd: {
+        labels: [],
+        datasets: []
+      },
+      data_rm: {
+        labels: [],
+        datasets: []
+      },
+      data_rs: {
+        labels: [],
+        datasets: []
+      },
     }
-    this.handleShowAvgTime = this.handleShowAvgTime.bind(this);
-    this.handleShowAvgDay = this.handleShowAvgDay.bind(this);
-    this.handleShowReqMac = this.handleShowReqMac.bind(this);
-    this.handleShowReqStat = this.handleShowReqStat.bind(this);
-
     this.reqPerMachine = this.reqPerMachine.bind(this);
-    this.reqPerMachineStatus = this.reqPerMachineStatus.bind(this);
-    this.reqPerMachineTime = this.reqPerMachineTime.bind(this);
-    this.reqPerMachineTimeDay = this.reqPerMachineTimeDay.bind(this);
+    this.reqPerStatus = this.reqPerStatus.bind(this);
+    this.reqPerTime = this.reqPerTime.bind(this);
+    this.reqPerTimeDay = this.reqPerTimeDay.bind(this);
     this.handleHide = this.handleHide.bind(this);
   }
 
   reqPerMachine() {
     let req = new Map()
-    //req.set(this.data[0].cd_machine,1)
-
     for (let d = 0; d < this.state.data.length; d++) {
-      if (req.has(this.state.data[d].cd_machine)) { 
+      if (req.has(this.state.data[d].cd_machine)) {
         let valor = req.get(this.state.data[d].cd_machine) + 1
         req.set(this.state.data[d].cd_machine, valor)
       } else {
@@ -43,43 +49,81 @@ class App extends React.Component {
       }
     }
 
-    req.forEach(function(valor, clave){
-      console.log(clave + ' ' + valor);
-    })
+    this.setState({ show_rm: true })
+    this.setState({ 
+      data_rm: {
+        labels: Array.from(req.keys()),
+        datasets: [
+          {
+            label: 'Requests per Machine',
+            backgroundColor: 'rgba(75,192,192,0.4)',
+            borderColor: 'rgba(75,192,192,1)',
+            borderWidth: 1,
+            hoverBackgroundColor: 'rgba(75,192,192,1)',
+            hoverBorderColor: 'rgba(220,220,220,1)',
+            data: [...Array.from(req.values()).slice(0)]
+          }
+        ]
+      }
+     })
   }
 
-  reqPerMachineStatus() {
+  reqPerStatus() {
     let req = new Map()
-    //req.set(this.data[0].cd_machine,1)
-
     for (let d = 0; d < this.state.data.length; d++) {
-      if (req.has(this.state.data[d].ds_compl_status_returned)) { 
+      if (req.has(this.state.data[d].ds_compl_status_returned)) {
         let valor = req.get(this.state.data[d].ds_compl_status_returned) + 1
         req.set(this.state.data[d].ds_compl_status_returned, valor)
       } else {
         req.set(this.state.data[d].ds_compl_status_returned, 1)
       }
     }
+    this.setState({ show_rs: true })
 
-    req.forEach(function(valor, clave){
-      console.log(clave + ' ' + valor);
+    this.setState({
+      data_req: {
+        labels: Array.from(req.keys()),
+        datasets: [
+          {
+            label: 'Requests per Compliance Status',
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: 'rgba(75,192,192,0.4)',
+            borderColor: 'rgba(75,192,192,1)',
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: 'rgba(75,192,192,1)',
+            pointBackgroundColor: '#fff',
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: 'rgba(75,192,192,1)',
+            pointHoverBorderColor: 'rgba(220,220,220,1)',
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: [...Array.from(req.values()).slice(0)]
+          }
+        ]
+      }
     })
+
   }
 
-  reqPerMachineTime() {
-   let sum_time = 0.0
-   let dif = 0.0  
+  reqPerTime() {
+    let sum_time = 0.0
+    let dif = 0.0
     for (let d = 0; d < this.state.data.length; d++) {
       dif = new Date(this.state.data[d].dt_end_log).getTime() - new Date(this.state.data[d].dt_Start_Log).getTime()
-      sum_time += dif/1000
+      sum_time += dif / 1000
       //console.log(this.state.data[d].dt_end_log+"++"+this.state.data[d].dt_Start_Log +"- "+ dif/1000)
     }
-    console.log(sum_time)
-    console.log(sum_time/this.state.data.length)
-    
+    this.setState({ show: true })
+
   }
 
-  reqPerMachineTimeDay() {
+  reqPerTimeDay() {
     let req = new Map()
     let req_co = new Map()
 
@@ -88,21 +132,34 @@ class App extends React.Component {
       let dateStart = new Date(this.state.data[d].dt_Start_Log)
       let key = `${dateStart.getDate()} ${dateStart.getMonth()} ${dateStart.getFullYear()}`
       let dif = dateEnd.getTime() - dateStart.getTime()
-     
-      if (req.has(key)) { 
-        let valor = req.get(key) + (dif/1000)
+
+      if (req.has(key)) {
+        let valor = req.get(key) + (dif / 1000)
         req.set(key, valor)
         valor = req_co.get(key) + 1
         req_co.set(key, valor)
       } else {
-        req.set(key,dif/1000)
-        req_co.set(key,1)     
+        req.set(key, dif / 1000)
+        req_co.set(key, 1)
       }
-    } 
-
-    req.forEach(function(valor, clave){
-      console.log(clave + ' ' + (valor/req_co.get(clave)));
-    })
+    }
+    this.setState({ 
+      show_rd: true,
+      data_rd: {
+        labels: Array.from(req.keys()),
+        datasets: [
+          {
+            label: 'Average response per Day',
+            backgroundColor: 'rgba(75,192,192,0.4)',
+            borderColor: 'rgba(75,192,192,1)',
+            borderWidth: 1,
+            hoverBackgroundColor: 'rgba(75,192,192,1)',
+            hoverBorderColor: 'rgba(220,220,220,1)',
+            data: [...Array.from(req.values()).slice(0)]
+          }
+        ]
+      } 
+    });
   }
 
   componentWillMount() {
@@ -116,21 +173,12 @@ class App extends React.Component {
       })
   }
 
-  handleShowAvgTime() {
-    this.setState({ avgTime: true });
-  }
-  handleShowAvgDay() {
-    this.setState({ avgDay: true });
-  }
-  handleShowReqMac() {
-    this.setState({ reqMac: true });
-  }
-  handleShowReqStat() {
-    this.setState({ reqStat: true });
-  }
-
   handleHide() {
-    this.setState({ show: false });
+    this.setState({ 
+      show_rd: false,
+      show_rm: false,
+      show_rs: false,
+    });
   }
 
   render() {
@@ -183,22 +231,22 @@ class App extends React.Component {
           <br /><br />
           <Row>
             <Col smOffset={2} sm={2}>
-              <Button bsStyle="primary" onClick={this.reqPerMachineTimeDay  }>
+              <Button bsStyle="primary" onClick={this.reqPerTime}>
                 <Glyphicon glyph="stats" />  Avg Response Time
               </Button>
             </Col>
             <Col sm={2}>
-              <Button bsStyle="primary">
+              <Button bsStyle="primary" onClick={this.reqPerTimeDay}>
                 <Glyphicon glyph="stats" />  Avg Response Day
               </Button>
             </Col>
             <Col sm={2}>
-              <Button bsStyle="primary">
+              <Button bsStyle="primary" onClick = {this.reqPerMachine}>
                 <Glyphicon glyph="stats" />  Request per Machine
               </Button>
             </Col>
             <Col sm={2}>
-              <Button bsStyle="primary">
+              <Button bsStyle="primary" onClick={this.reqPerStatus}>
                 <Glyphicon glyph="stats" />  Request per Status
               </Button>
             </Col>
@@ -295,6 +343,57 @@ class App extends React.Component {
             defaultPageSize={20}
             className="-striped -highlight"
           />
+
+          <Modal show={this.state.show_rs} onHide={this.handleHide}>
+            <Modal.Header closeButton>
+              <Modal.Title>Average Response Time per Day </Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <div>
+                <Line data={this.state.data_req} />
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button onClick={this.handleHide}>Close</Button>
+            </Modal.Footer>
+          </Modal>
+
+          <Modal show={this.state.show_rm} onHide={this.handleHide}>
+            <Modal.Header closeButton>
+              <Modal.Title>Total Requests per Machine </Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <div>
+                <Bar
+                  data={this.state.data_rm}
+                  width={100}
+                  height={50}
+                />
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button onClick={this.handleHide}>Close</Button>
+            </Modal.Footer>
+          </Modal>
+
+          <Modal show={this.state.show_rd} onHide={this.handleHide}>
+            <Modal.Header closeButton>
+              <Modal.Title>Average Response Time per Day </Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+            <div>
+                <Bar
+                  data={this.state.data_rd}
+                  width={100}
+                  height={50}
+                />
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button onClick={this.handleHide}>Close</Button>
+            </Modal.Footer>
+          </Modal>
+
           <br />
           <Tips />
           <br />
