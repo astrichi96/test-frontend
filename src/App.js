@@ -124,7 +124,7 @@ class App extends React.Component {
     for (let d = 0; d < this.state.data.length; d++) {
       dif = new Date(this.state.data[d].dt_end_log).getTime() - new Date(this.state.data[d].dt_Start_Log).getTime()
       sum_time += dif / 1000
-      //console.log(this.state.data[d].dt_end_log+"++"+this.state.data[d].dt_Start_Log +"- "+ dif/1000)
+      console.log(this.state.data[d].dt_end_log+"++"+this.state.data[d].dt_Start_Log +"- "+ dif/1000)
     }
     this.setState({ show: true })
 
@@ -175,8 +175,6 @@ class App extends React.Component {
   }
 
   componentWillMount() {
-    console.log("entro")
-    //fetch("https://api.cebroker.com/v1/cerenewaltransactions/GetLogsRecordData?startdate=04/16/2018")
     let day = new Date()
     let cadena = `${day.getMonth()+1}/${day.getDate()-1}/${day.getFullYear()}`
     console.log(cadena)
