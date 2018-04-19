@@ -1,5 +1,8 @@
+/*
+  The necessary dependencies are imported so that they can be implemented in the development of the application
+*/
 import React from "react";
-import { Tips } from "./Utils";
+import { Tips, Loading } from "./Utils";
 import {Line, Bar} from 'react-chartjs-2';
 import { FormControl, FormGroup, Button, Navbar, Col, Row, Glyphicon, Modal } from 'react-bootstrap'
 
@@ -11,13 +14,16 @@ import "react-table/react-table.css";
 class App extends React.Component {
   constructor() {
     super();
+
+    /*
+      Specify the variables to which they will be verifying and making editions 
+      according to the operations carried out
+    */
     this.state = {
       data: [],
-      show_tt: false,
       show_rd: false,
       show_rm: false,
       show_rs: false,
-      data_tt: {},
       data_rd: {
         labels: [],
         datasets: []
@@ -33,11 +39,12 @@ class App extends React.Component {
       date_end: '',
       date_start: '',
     }
+
     this.handleChange1 = this.handleChange1.bind(this);
     this.handleChange2 = this.handleChange2.bind(this);
     this.reqPerMachine = this.reqPerMachine.bind(this);
     this.reqPerStatus = this.reqPerStatus.bind(this);
-    this.reqPerTime = this.reqPerTime.bind(this);
+    this.getReqPerTime = this.getReqPerTime.bind(this);
     this.reqPerTimeDay = this.reqPerTimeDay.bind(this);
     this.handleHide = this.handleHide.bind(this);
     this.data_request = this.data_request.bind(this);
@@ -45,6 +52,10 @@ class App extends React.Component {
     
   }
 
+  /*
+    block of code that will help to calculate the total per machine and at the same 
+    time define the graph to later visualize it in a modal component
+  */
   reqPerMachine() {
     let req = new Map()
     for (let d = 0; d < this.state.data.length; d++) {
@@ -75,6 +86,10 @@ class App extends React.Component {
      })
   }
 
+  /*
+    block of code that will help to calculate the total by Compliance state and at the same time 
+    define the graph to later visualize it in a modal component
+  */
   reqPerStatus() {
     let req = new Map()
     for (let d = 0; d < this.state.data.length; d++) {
@@ -118,18 +133,24 @@ class App extends React.Component {
 
   }
 
-  reqPerTime() {
+  /*
+    block of code that will help to calculate the total Average Response Time
+  */
+  getReqPerTime() {
     let sum_time = 0.0
     let dif = 0.0
     for (let d = 0; d < this.state.data.length; d++) {
       dif = new Date(this.state.data[d].dt_end_log).getTime() - new Date(this.state.data[d].dt_Start_Log).getTime()
       sum_time += dif / 1000
-      console.log(this.state.data[d].dt_end_log+"++"+this.state.data[d].dt_Start_Log +"- "+ dif/1000)
     }
-    this.setState({ show: true })
-
+  
+    return (sum_time / this.state.data.length)
   }
 
+  /*
+    block of code that will help to calculate the total response time per day and at the same time 
+    define the graph to later visualize it in a modal component
+  */
   reqPerTimeDay() {
     let req = new Map()
     let req_co = new Map()
@@ -174,6 +195,10 @@ class App extends React.Component {
     });
   }
 
+  /*
+    In this part the query is made to the api provided to receive the response and perform the 
+    requested operations
+  */
   componentWillMount() {
     let day = new Date()
     let cadena = `${day.getMonth()+1}/${day.getDate()-1}/${day.getFullYear()}`
@@ -188,6 +213,10 @@ class App extends React.Component {
     })
   }
 
+  /*
+    This block is called when you want to change the state of the variable to false when 
+    the modal that shows the graphs or statistics is closed
+  */
   handleHide() {
     this.setState({ 
       show_rd: false,
@@ -195,16 +224,24 @@ class App extends React.Component {
       show_rs: false,
     });
   }
+
+  /*
+    This block of code is used to obtain the range of dates on which you want to see listed logs, 
+    in this part interact (getdata, handleChange1 and handleChange2)
+  */
    getdata(date){
      return `${date.split('-')[1]}/${date.split('-')[2]}/${date.split('-')[0]}`
    }
   handleChange1(e) {
     this.setState({ date_end: e.target.value });
-}
-  
+  }
   handleChange2(e) {
      this.setState({ date_start: e.target.value });
    }
+
+  /*
+  This block is called when you want to perform the query that allows you to view the data by date range
+  */
   data_request(){
     this.setState({
       data: []
@@ -226,11 +263,12 @@ class App extends React.Component {
     const { data } = this.state;
     return (
 
+      // It shows a simple enabezado with general information
       <div className="container"><br />
         <Navbar>
           <Navbar.Header bsStyle="inverse">
             <Navbar.Brand>
-              <a href="#home">Pagina Principal</a>
+              <a href="#home">Home Page</a>
 
             </Navbar.Brand>
             <Navbar.Toggle />
@@ -239,8 +277,9 @@ class App extends React.Component {
             <Navbar.Text pullRight>The compliance status for licensees of some states in the US.</Navbar.Text>
           </Navbar.Collapse>
         </Navbar>
-
         <br />
+        
+      
         <div className="row">
           <div className="row ">
             <br />
@@ -268,29 +307,24 @@ class App extends React.Component {
                 </Col>
               </FormGroup>
               <Col sm={3}>
-                  <Button bsStyle="danger"  onClick = {this.data_request}> filter Records</Button>
+                  <Button bsStyle="danger"  onClick = {this.data_request} disabled = {(this.state.data.length === 0)}> Search by Date Range </Button>
                 </Col>
             </form>
 
           </div >
           <br /><br />
           <Row>
-            <Col smOffset={2} sm={2}>
-              <Button bsStyle="primary" onClick={this.reqPerTime} disabled = {(this.state.data.length === 0)}>
-                <Glyphicon glyph="stats" />  Avg Response Time
-              </Button>
-            </Col>
-            <Col sm={2}>
+            <Col smOffset={2} sm={3}>
               <Button bsStyle="primary" onClick={this.reqPerTimeDay} disabled = {(this.state.data.length === 0)}>
                 <Glyphicon glyph="stats" />  Avg Response Day
               </Button>
             </Col>
-            <Col sm={2}>
+            <Col sm={3}>
               <Button bsStyle="primary" onClick = {this.reqPerMachine} disabled = {(this.state.data.length === 0)}>
                 <Glyphicon glyph="stats" />  Request per Machine
               </Button>
             </Col>
-            <Col sm={2}>
+            <Col sm={3}>
               <Button bsStyle="primary" onClick={this.reqPerStatus} disabled = {(this.state.data.length === 0)}>
                 <Glyphicon glyph="stats" />  Request per Status
               </Button>
@@ -298,7 +332,8 @@ class App extends React.Component {
           </Row>
 
           <br /><br />
-
+          
+        
           <ReactTable
             data={data}
             filterable
@@ -396,7 +431,7 @@ class App extends React.Component {
             <Modal.Body>
               <div>
                 <Line data={this.state.data_req} />
-              </div>
+             </div>
             </Modal.Body>
             <Modal.Footer>
               <Button onClick={this.handleHide}>Close</Button>
@@ -432,6 +467,8 @@ class App extends React.Component {
                   width={100}
                   height={50}
                 />
+                <br />
+                <label bsStyle="primary">Total Average Response Time: {this.getReqPerTime().toFixed(3)}</label>
               </div>
             </Modal.Body>
             <Modal.Footer>

@@ -6,3 +6,5 @@ export const Tips = () =>
     <em>Dashboard page to display those transaction logs!</em>
     <br />
   </div>;
+
+
