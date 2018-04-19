@@ -30,12 +30,19 @@ class App extends React.Component {
         labels: [],
         datasets: []
       },
+      date_end: '',
+      date_start: '',
     }
+    this.handleChange1 = this.handleChange1.bind(this);
+    this.handleChange2 = this.handleChange2.bind(this);
     this.reqPerMachine = this.reqPerMachine.bind(this);
     this.reqPerStatus = this.reqPerStatus.bind(this);
     this.reqPerTime = this.reqPerTime.bind(this);
     this.reqPerTimeDay = this.reqPerTimeDay.bind(this);
     this.handleHide = this.handleHide.bind(this);
+    this.data_request = this.data_request.bind(this);
+    this.getdata = this.getdata.bind(this);
+    
   }
 
   reqPerMachine() {
@@ -49,8 +56,8 @@ class App extends React.Component {
       }
     }
 
-    this.setState({ show_rm: true })
     this.setState({ 
+      show_rm: true,
       data_rm: {
         labels: Array.from(req.keys()),
         datasets: [
@@ -78,9 +85,9 @@ class App extends React.Component {
         req.set(this.state.data[d].ds_compl_status_returned, 1)
       }
     }
-    this.setState({ show_rs: true })
-
+    
     this.setState({
+      show_rs: true,
       data_req: {
         labels: Array.from(req.keys()),
         datasets: [
@@ -126,6 +133,7 @@ class App extends React.Component {
   reqPerTimeDay() {
     let req = new Map()
     let req_co = new Map()
+    let tot_dia = []
 
     for (let d = 0; d < this.state.data.length; d++) {
       let dateEnd = new Date(this.state.data[d].dt_end_log)
@@ -143,6 +151,10 @@ class App extends React.Component {
         req_co.set(key, 1)
       }
     }
+
+    req.forEach(function(valor, clave){
+      tot_dia.push(valor/req_co.get(clave))
+    })
     this.setState({ 
       show_rd: true,
       data_rd: {
@@ -155,7 +167,7 @@ class App extends React.Component {
             borderWidth: 1,
             hoverBackgroundColor: 'rgba(75,192,192,1)',
             hoverBorderColor: 'rgba(220,220,220,1)',
-            data: [...Array.from(req.values()).slice(0)]
+            data: tot_dia
           }
         ]
       } 
@@ -163,14 +175,19 @@ class App extends React.Component {
   }
 
   componentWillMount() {
-    fetch("https://api.cebroker.com/v1/cerenewaltransactions/GetLogsRecordData?startdate=04/16/2018")
-      .then((response) => {
-        return response.json()
-      })
-      .then((data) => {
-        this.setState({ data: data })
-        console.log(data.length)
-      })
+    console.log("entro")
+    //fetch("https://api.cebroker.com/v1/cerenewaltransactions/GetLogsRecordData?startdate=04/16/2018")
+    let day = new Date()
+    let cadena = `${day.getMonth()+1}/${day.getDate()-1}/${day.getFullYear()}`
+    console.log(cadena)
+    fetch(`https://api.cebroker.com/v1/cerenewaltransactions/GetLogsRecordData?startdate=${cadena}`)
+    .then((response) => {
+      return response.json()
+    })
+    .then((data) => {
+      this.setState({ data: data })
+      console.log(data.length)
+    })
   }
 
   handleHide() {
@@ -179,6 +196,32 @@ class App extends React.Component {
       show_rm: false,
       show_rs: false,
     });
+  }
+   getdata(date){
+     return `${date.split('-')[1]}/${date.split('-')[2]}/${date.split('-')[0]}`
+   }
+  handleChange1(e) {
+    this.setState({ date_end: e.target.value });
+}
+  
+  handleChange2(e) {
+     this.setState({ date_start: e.target.value });
+   }
+  data_request(){
+    this.setState({
+      data: []
+    })
+    console.log("entro boton")
+    fetch(`https://api.cebroker.com/v1/cerenewaltransactions/GetLogsRecordData?startdate=${this.getdata(this.state.date_start)}&enddate=${this.getdata(this.state.date_end)}`)
+      .then((response) => {
+        return response.json() 
+        
+      })
+      .then((data) => {
+        this.setState({ data: data })
+        console.log(data.length)
+        console.log("termino")
+      })
   }
 
   render() {
@@ -208,45 +251,49 @@ class App extends React.Component {
                 <Col smOffset={1} sm={4}>
                   <FormControl
                     id="formControlsText"
-                    type="text"
+                    type="date"
                     label="Text"
+                    value = {this.state.date_start}
+                    onChange={this.handleChange2}
                     placeholder="Enter date initial"
                   />
                 </Col>
                 <Col sm={4}>
                   <FormControl
                     id="formControlsEmail"
-                    type="email"
+                    type="date"
                     label="Email address"
+                    value = {this.state.date_end}
+                    onChange={this.handleChange1}
                     placeholder="Enter date end"
                   />
                 </Col>
-                <Col sm={3}>
-                  <Button bsStyle="danger" type="submit"> filter Records</Button>
-                </Col>
               </FormGroup>
+              <Col sm={3}>
+                  <Button bsStyle="danger"  onClick = {this.data_request}> filter Records</Button>
+                </Col>
             </form>
 
           </div >
           <br /><br />
           <Row>
             <Col smOffset={2} sm={2}>
-              <Button bsStyle="primary" onClick={this.reqPerTime}>
+              <Button bsStyle="primary" onClick={this.reqPerTime} disabled = {(this.state.data.length === 0)}>
                 <Glyphicon glyph="stats" />  Avg Response Time
               </Button>
             </Col>
             <Col sm={2}>
-              <Button bsStyle="primary" onClick={this.reqPerTimeDay}>
+              <Button bsStyle="primary" onClick={this.reqPerTimeDay} disabled = {(this.state.data.length === 0)}>
                 <Glyphicon glyph="stats" />  Avg Response Day
               </Button>
             </Col>
             <Col sm={2}>
-              <Button bsStyle="primary" onClick = {this.reqPerMachine}>
+              <Button bsStyle="primary" onClick = {this.reqPerMachine} disabled = {(this.state.data.length === 0)}>
                 <Glyphicon glyph="stats" />  Request per Machine
               </Button>
             </Col>
             <Col sm={2}>
-              <Button bsStyle="primary" onClick={this.reqPerStatus}>
+              <Button bsStyle="primary" onClick={this.reqPerStatus} disabled = {(this.state.data.length === 0)}>
                 <Glyphicon glyph="stats" />  Request per Status
               </Button>
             </Col>
